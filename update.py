@@ -43,16 +43,23 @@ AHEAD = {"Sicredi", "Banco Arbi", "Banco Inter", "BancoSeguro"}
 def fetch_bacen(data_inicio: str, data_fim: str) -> list:
     """Busca dados da API OData do Bacen para o período informado."""
     base = "https://olinda.bcb.gov.br/olinda/servico/taxaJuros/versao/v2/odata/TaxasJurosDiariaPorInicioPeriodo"
-    params = {
-        "$format": "json",
-        "$filter": f"Modalidade eq '{MODALIDADE}' and Segmento eq '{SEGMENTO}'",
-        "$select": "InicioPeriodo,InstituicaoFinanceira,TaxaJurosAoMes,TaxaJurosAoAno,Posicao",
-        "$orderby": "InicioPeriodo asc,Posicao asc",
-        "$top": "1000",
-        "dataInicio": data_inicio,
-        "dataFim": data_fim,
-    }
-    url = base + "?" + urllib.parse.urlencode(params)
+
+    # Monta URL manualmente — urllib.parse.urlencode codifica os $ dos parâmetros
+    # OData para %24, causando erro 400 na API do Bacen.
+    filter_val  = urllib.parse.quote(f"Modalidade eq '{MODALIDADE}' and Segmento eq '{SEGMENTO}'")
+    select_val  = "InicioPeriodo,InstituicaoFinanceira,TaxaJurosAoMes,TaxaJurosAoAno,Posicao"
+    orderby_val = urllib.parse.quote("InicioPeriodo asc,Posicao asc")
+
+    url = (
+        f"{base}"
+        f"?$format=json"
+        f"&$filter={filter_val}"
+        f"&$select={select_val}"
+        f"&$orderby={orderby_val}"
+        f"&$top=1000"
+        f"&dataInicio={data_inicio}"
+        f"&dataFim={data_fim}"
+    )
     print(f"  Buscando: {url[:120]}...")
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
     with urllib.request.urlopen(req, timeout=30) as resp:
