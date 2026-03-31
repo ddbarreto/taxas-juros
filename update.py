@@ -214,23 +214,23 @@ def build_publico_data(series):
             "periods": periods, "defaultPeriod": default, "avgs": nu_avgs}
 
 def build_monthly_data(series, modkey):
-    """Dados mensais — barras por mês, todos os players rankeados."""
-    all_dates = sorted({d for s in series.values() for d in s})
+    """Dados mensais — agrupados por mes (media mensal)."""
     month_map_short = {"01":"Jan","02":"Fev","03":"Mar","04":"Abr","05":"Mai","06":"Jun",
                        "07":"Jul","08":"Ago","09":"Set","10":"Out","11":"Nov","12":"Dez"}
 
+    # Group all dates by month key "YYYY-MM"
+    month_keys = sorted({d[:7] for s in series.values() for d in s})
+
     periods = {}
-    for d in all_dates:
-        mo = d[5:7]
-        yr = d[:4]
-        label = f"{month_map_short[mo]} {yr}"
-        periods[d] = {"label": label, "date": d}
-    periods["all"] = {"label": "M\u00e9dia do per\u00edodo", "date": "all"}
-    default = all_dates[-1] if all_dates else "all"
+    for mk in month_keys:
+        yr, mo = mk[:4], mk[5:7]
+        periods[mk] = {"label": f"{month_map_short[mo]} {yr}"}
+    periods["all"] = {"label": "Média do período"}
+    default = month_keys[-1] if month_keys else "all"
 
     inst_map = get_inst_map(modkey)
     known_names = set(inst_map.values())
-    always_show = {"Nubank", "Caixa", "It\u00e1u", "Banco do Brasil"}
+    always_show = {"Nubank", "Caixa", "Itáu", "Banco do Brasil"}
 
     ranked_per_period = {}
     for pk in list(periods.keys()):
@@ -238,14 +238,14 @@ def build_monthly_data(series, modkey):
         for name, dates in series.items():
             if pk == "all":
                 vals = [v for v in dates.values() if v is not None]
-                rate = round(sum(vals)/len(vals), 2) if vals else None
             else:
-                rate = dates.get(pk)
-            if rate is not None:
+                vals = [v for d, v in dates.items() if d[:7] == pk and v is not None]
+            if vals:
+                rate = round(sum(vals)/len(vals), 2)
                 all_rows.append({"name": name, "rate": rate,
                                  "color": get_color(name), "isNubank": name == "Nubank"})
-        all_rows.sort(key=lambda r: r["rate"])
 
+        all_rows.sort(key=lambda r: r["rate"])
         nu_idx = next((i for i, r in enumerate(all_rows) if r["isNubank"]), None)
         nu_global_pos = (nu_idx + 1) if nu_idx is not None else None
         total = len(all_rows)
@@ -254,7 +254,6 @@ def build_monthly_data(series, modkey):
             r["pos"] = i + 1
             r["ahead"] = nu_idx is not None and i < nu_idx
 
-        # Show: ahead of Nubank + always_show + known mapped names
         shown = [r for r in all_rows
                  if r["ahead"] or r["name"] in always_show or r["name"] in known_names]
 
@@ -262,13 +261,6 @@ def build_monthly_data(series, modkey):
 
     return {"type": "monthly", "periods": periods, "defaultPeriod": default,
             "ranked": ranked_per_period}
-
-
-
-
-
-# ── JS Dashboard Code ─────────────────────────────────────────────────────────
-JS_CODE = open(__file__.replace('update.py','dashboard.js')).read()
 
 def build_html(all_data, generated_at):
     publico = build_publico_data(all_data.get("publico", {}))
@@ -416,4 +408,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
