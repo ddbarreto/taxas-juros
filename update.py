@@ -11,7 +11,7 @@ import sys
 
 # ── Configurações ────────────────────────────────────────────────────────────
 
-MODALIDADE = "Crédito pessoal consignado público - Prefixado"
+MODALIDADE = "Cr" + "\u00e9" + "dito pessoal consignado p" + "\u00fa" + "blico - Prefixado"
 SEGMENTO   = "Pessoa Física"
 
 INSTITUICOES = {
