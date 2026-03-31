@@ -419,34 +419,79 @@ document.querySelectorAll('.tab')[Object.keys(periods).length - 2].classList.add
     return html
 
 
+# ── Persistência ─────────────────────────────────────────────────────────────
+
+DATA_FILE = "data.json"
+
+def load_historical() -> dict:
+    """Carrega dados históricos do arquivo local (se existir)."""
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        total = sum(len(v) for v in data.values())
+        print(f"  Histórico carregado: {total} registros em {len(data)} instituições")
+        return data
+    except FileNotFoundError:
+        print("  Nenhum histórico encontrado — iniciando do zero.")
+        return {name: {} for name in INSTITUICOES.values()}
+
+def merge_series(historical: dict, new_series: dict) -> dict:
+    """Faz merge dos dados novos com o histórico, sem perder dados antigos."""
+    merged = {name: dict(historical.get(name, {})) for name in INSTITUICOES.values()}
+    new_count = 0
+    for name, dates in new_series.items():
+        for date, taxa in dates.items():
+            if date not in merged[name]:
+                new_count += 1
+            merged[name][date] = taxa
+    print(f"  Novos registros adicionados ao histórico: {new_count}")
+    return merged
+
+def save_historical(series: dict):
+    """Salva o histórico atualizado no arquivo local."""
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(series, f, ensure_ascii=False, indent=2)
+    total = sum(len(v) for v in series.values())
+    print(f"  Histórico salvo: {total} registros")
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
     print("=== Atualizando dashboard de taxas de juros ===")
 
-    data_inicio, data_fim = get_date_range(months_back=4)
-    print(f"Período: {data_inicio} → {data_fim}")
+    # 1. Carrega histórico acumulado
+    historical = load_historical()
 
-    print("Buscando dados da API do Bacen...")
+    # 2. Busca dados novos da API
+    data_inicio, data_fim = get_date_range(months_back=2)
+    print(f"Buscando dados novos: {data_inicio} → {data_fim}")
     try:
         records = fetch_bacen(data_inicio, data_fim)
-        print(f"  {len(records)} registros recebidos.")
+        print(f"  {len(records)} registros recebidos da API.")
     except Exception as e:
         print(f"ERRO ao buscar dados: {e}", file=sys.stderr)
         sys.exit(1)
 
-    if not records:
-        print("Nenhum dado retornado. Verifique o endpoint.", file=sys.stderr)
-        sys.exit(1)
+    # 3. Faz merge com histórico
+    new_series = build_series(records) if records else {name: {} for name in INSTITUICOES.values()}
+    merged = merge_series(historical, new_series)
 
-    series = build_series(records)
+    # 4. Salva histórico atualizado
+    save_historical(merged)
 
     # Log de cobertura
-    for name, data in series.items():
-        print(f"  {name}: {len(data)} pregões, última data: {max(data) if data else 'n/a'}")
+    for name, data in merged.items():
+        if data:
+            print(f"  {name}: {len(data)} pregões | {min(data)} → {max(data)}")
 
+    if not any(merged.values()):
+        print("Nenhum dado disponível.", file=sys.stderr)
+        sys.exit(1)
+
+    # 5. Gera HTML
     generated_at = datetime.today().strftime("%d/%m/%Y")
-    html = build_html(series, generated_at)
+    html = build_html(merged, generated_at)
 
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
