@@ -47,7 +47,7 @@ def fetch_bacen(data_inicio: str, data_fim: str) -> list:
     url = (
         f"{base}"
         f"?$format=json"
-        f"&$top=5000"
+        f"&$top=10000"
         f"&dataInicio={data_inicio}"
         f"&dataFim={data_fim}"
     )
@@ -68,6 +68,13 @@ def fetch_bacen(data_inicio: str, data_fim: str) -> list:
         and "SICA" in r.get("Segmento", "")
     ]
     print(f"  Após filtro: {len(filtered)}")
+    # Show date coverage
+    from collections import defaultdict
+    by_inst = defaultdict(list)
+    for r in filtered:
+        by_inst[r.get("InstituicaoFinanceira","")].append(r.get("InicioPeriodo","")[:10])
+    for inst, dates in sorted(by_inst.items()):
+        print(f"    {inst}: {len(dates)} registros | {min(dates)} → {max(dates)}")
     return filtered
 
 def build_series(records: list) -> dict:
@@ -87,7 +94,7 @@ def build_series(records: list) -> dict:
             series[name][date] = float(taxa)
     return series
 
-def get_date_range(months_back: int = 4):
+def get_date_range(months_back: int = 6):
     today = datetime.today()
     start = today - timedelta(days=months_back * 31)
     return start.strftime("%Y-%m-%d"), today.strftime("%Y-%m-%d")
