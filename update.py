@@ -135,14 +135,8 @@ def build_series(records, modkey):
     series = {}
     for r in filtered:
         raw = r.get("InstituicaoFinanceira","")
-        # For publico: only mapped institutions
-        # For inss/privado: include all institutions
-        if modkey == "publico":
-            name = inst_map.get(raw)
-            if not name:
-                continue
-        else:
-            name = inst_map.get(raw, raw)  # fallback to raw name
+        # For all modalidades: include all institutions, using mapped name if available
+        name = inst_map.get(raw, raw)
         date = r.get("InicioPeriodo","")[:10]
         taxa = r.get("TaxaJurosAoMes")
         if taxa is not None and date:
@@ -208,14 +202,23 @@ def build_publico_data(series):
     periods["all"] = {"label": f"Per\u00edodo completo ({len(all_dates)} preg\u00f5es)", "idx": all_idxs}
     default = f"m{len(month_seq)-1}"
 
+    # Calculate overall average per institution to determine who's ahead of Nubank
+    overall_avgs = {}
+    for name, dates in series.items():
+        vals = [v for v in dates.values() if v is not None]
+        if vals:
+            overall_avgs[name] = sum(vals) / len(vals)
+    nu_overall = overall_avgs.get("Nubank", 999)
+
     banks = []
     raw = {}
     nu_avgs = {}
     for name in sorted(series.keys(), key=lambda n: (n != "Nubank", n)):
         vals = [series[name].get(d) for d in all_dates]
         raw[name] = vals
+        avg_rate = overall_avgs.get(name, 999)
         banks.append({"key": name, "color": get_color(name), "isNubank": name == "Nubank",
-                      "ahead": name in {"Sicredi","Banco Arbi","Banco Inter","BancoSeguro"}})
+                      "ahead": avg_rate < nu_overall and name != "Nubank"})
         for pk, pv in periods.items():
             idxs = pv["idx"]
             valid = [vals[i] for i in idxs if vals[i] is not None]
