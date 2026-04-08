@@ -526,7 +526,7 @@ main{max-width:960px;margin:0 auto;padding:1.75rem 1.5rem}
 <header>
   <div class="logo">TX</div>
   <div><div class="ht">Comparativo de Taxas de Juros</div><div class="hs">Cr\u00e9dito Consignado \u00b7 Prefixado \u00b7 Pessoa F\u00edsica \u00b7 Bacen</div></div>
-  <div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span style="font-size:10px;font-weight:500;padding:2px 9px;background:#F3F0FF;color:#7C3AED;border-radius:20px">Powered by AI ✨</span><div class="hb">Atualizado em """
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;padding:5px 12px 5px 8px;background:#F3F0FF;color:#5B21B6;border-radius:20px;letter-spacing:0.04em;border:1px solid #DDD6FE;white-space:nowrap"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#7C3AED" stroke-width="1"/><path d="M7 3.5C7 3.5 8.5 5 8.5 7C8.5 9 7 10.5 7 10.5C7 10.5 5.5 9 5.5 7C5.5 5 7 3.5 7 3.5Z" stroke="#7C3AED" stroke-width="1" stroke-linejoin="round"/><path d="M3.5 7H10.5" stroke="#7C3AED" stroke-width="1"/></svg>Powered by AI | Research Team</span><div class="hb">Atualizado em """
         + generated_at +
         """</div></div>
 </header>
