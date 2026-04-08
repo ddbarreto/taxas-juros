@@ -318,7 +318,7 @@ def build_publico_data(series):
                 and datetime.strptime(d, "%Y-%m-%d").year == yr]
         periods[f"m{i}"] = {"label": label, "idx": idxs}
     all_idxs = list(range(len(all_dates)))
-    periods["all"] = {"label": f"Per\u00edodo completo ({len(all_dates)} preg\u00f5es)", "idx": all_idxs}
+    periods["all"] = {"label": "M\u00e9dia do per\u00edodo", "idx": all_idxs}
     default = f"m{len(month_seq)-1}"
 
     # Calculate overall average per institution to determine who's ahead of Nubank
@@ -526,9 +526,9 @@ main{max-width:960px;margin:0 auto;padding:1.75rem 1.5rem}
 <header>
   <div class="logo">TX</div>
   <div><div class="ht">Comparativo de Taxas de Juros</div><div class="hs">Cr\u00e9dito Consignado \u00b7 Prefixado \u00b7 Pessoa F\u00edsica \u00b7 Bacen</div></div>
-  <div class="hb">Atualizado em """
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span style="font-size:10px;font-weight:500;padding:2px 9px;background:#F3F0FF;color:#7C3AED;border-radius:20px">Powered by AI ✨</span><div class="hb">Atualizado em """
         + generated_at +
-        """</div>
+        """</div></div>
 </header>
 <div class="mtabs">
   <button class="mtab active" onclick="showModal('publico',this)">Consignado P\u00fablico</button>
