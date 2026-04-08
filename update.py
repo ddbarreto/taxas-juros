@@ -97,6 +97,107 @@ CORES = {
     "Digio":           "#D4537E",
 }
 
+# Categorias das instituições para badge no ranking
+CATEGORIAS = {
+    # Fintechs / digitais
+    "Nubank":          "fintech",
+    "Banco Inter":     "fintech",
+    "BancoSeguro":     "fintech",
+    "Digio":           "fintech",
+    "PicPay":          "fintech",
+    "XP":              "fintech",
+    "C6":              "fintech",
+    "Neon":            "fintech",
+    "BCO C6 CONSIG":   "fintech",
+    "BANCO DIGIO":     "fintech",
+    "NEON FINANCEIRA - SCFI S.A.": "fintech",
+    "PICPAY BANK - BANCO M\u00daTIPLO S.A": "fintech",
+    "BCO XP S.A.":     "fintech",
+
+    # Cooperativas
+    "Sicredi":         "cooperativa",
+    "Sicoob":          "cooperativa",
+    "BCO COOPERATIVO SICREDI S.A.": "cooperativa",
+    "BANCO SICOOB S.A.": "cooperativa",
+    "BRB - CFI S/A":   "cooperativa",
+    "Banrisul":        "cooperativa",
+    "BCO DO ESTADO DO RS S.A.": "cooperativa",
+    "Banestes":        "cooperativa",
+    "BCO BANESTES S.A.": "cooperativa",
+    "BCO DO EST. DE SE S.A.": "cooperativa",
+
+    # Bancos tradicionais grandes
+    "Itaú":            "tradicional",
+    "Caixa":           "tradicional",
+    "Banco do Brasil": "tradicional",
+    "Bradesco":        "tradicional",
+    "Santander":       "tradicional",
+    "BCO BRADESCO S.A.": "tradicional",
+    "BCO SANTANDER (BRASIL) S.A.": "tradicional",
+    "ITAÚ UNIBANCO S.A.": "tradicional",
+    "BANCO ITAÚ CONSIGNADO S.A.": "tradicional",
+    "CAIXA ECONOMICA FEDERAL": "tradicional",
+    "BCO DO BRASIL S.A.": "tradicional",
+
+    # Bancos médios / especializados em consignado
+    "Banco Arbi":      "especializado",
+    "Banco Inbursa":   "especializado",
+    "BCO ARBI S.A.":   "especializado",
+    "BANCO INBURSA":   "especializado",
+    "BCO BMG S.A.":    "especializado",
+    "BANCO PAN":       "especializado",
+    "PAN FINAN":       "especializado",
+    "BCO DAYCOVAL S.A": "especializado",
+    "Daycoval":        "especializado",
+    "BCO PAULISTA S.A.": "especializado",
+    "BCO Paulista":    "especializado",
+    "BCO SAFRA S.A.":  "especializado",
+    "BCO Industrial":  "especializado",
+    "BCO INDUSTRIAL DO BRASIL S.A.": "especializado",
+    "BCO MERCANTIL DO BRASIL S.A.": "especializado",
+    "BCO AGIBANK S.A.": "especializado",
+    "BANCO BARI S.A.": "especializado",
+    "BCO BV S.A.":     "especializado",
+    "BANCO BTG PACTUAL S.A.": "especializado",
+    "BCO PINE S.A.":   "especializado",
+    "BCO DO NORDESTE DO BRASIL S.A.": "especializado",
+    "BCO DO EST. DO PA S.A.": "especializado",
+
+    # CFIs / financeiras especializadas em consignado
+    "Parati CFI":      "financeira",
+    "PARATI - CFI S.A.": "financeira",
+    "PortoSeg":        "financeira",
+    "PORTOSEG S.A. CFI": "financeira",
+    "Cobuccio":        "financeira",
+    "COBUCCIO S.A. SCFI": "financeira",
+    "Senff":           "financeira",
+    "BCO SENFF S.A.":  "financeira",
+    "Volkswagen":      "financeira",
+    "BCO VOLKSWAGEN S.A": "financeira",
+    "FACTA S.A. CFI":  "financeira",
+    "GAZINCRED S.A. SCFI": "financeira",
+    "MIDWAY S.A. - SCFI": "financeira",
+    "AL5 S.A. SCFI":   "financeira",
+    "RPW S.A. SCFI":   "financeira",
+    "VALOR S/A SCFI":  "financeira",
+    "NEGRESCO S.A. - CFI": "financeira",
+    "SANTINVEST S.A. - CFI": "financeira",
+    "ZEMA CFI S/A":    "financeira",
+    "HS FINANCEIRA":   "financeira",
+    "BECKER FINANCEIRA SA - CFI": "financeira",
+    "LECCA CFI S.A.":  "financeira",
+    "PEFISA S.A. - C.F.I.": "financeira",
+    "FINAC ALFA S.A. CFI": "financeira",
+    "FINANC ALFA S.A. CFI": "financeira",
+    "BCO CSF S.A.":    "financeira",
+    "BANCO SEMEAR":    "financeira",
+    "NOVO BCO CONTINENTAL S.A. - BM": "financeira",
+}
+
+def get_categoria(name):
+    return CATEGORIAS.get(name, "especializado")
+
+
 DATA_FILE = "data.json"
 
 # ── API ───────────────────────────────────────────────────────────────────────
@@ -218,7 +319,8 @@ def build_publico_data(series):
         raw[name] = vals
         avg_rate = overall_avgs.get(name, 999)
         banks.append({"key": name, "color": get_color(name), "isNubank": name == "Nubank",
-                      "ahead": avg_rate < nu_overall and name != "Nubank"})
+                      "ahead": avg_rate < nu_overall and name != "Nubank",
+                      "categoria": get_categoria(name)})
         for pk, pv in periods.items():
             idxs = pv["idx"]
             valid = [vals[i] for i in idxs if vals[i] is not None]
@@ -281,7 +383,8 @@ def build_monthly_data(series, modkey):
         raw[name] = vals
         avg_rate = overall_avgs.get(name, 999)
         banks.append({"key": name, "color": get_color(name), "isNubank": name == "Nubank",
-                      "ahead": avg_rate < nu_overall and name != "Nubank"})
+                      "ahead": avg_rate < nu_overall and name != "Nubank",
+                      "categoria": get_categoria(name)})
 
     # chart_banks: Nubank + up to 5 closest ahead, or 5 behind if none ahead
     sorted_by_avg = sorted(overall_avgs.items(), key=lambda x: x[1])
@@ -304,7 +407,8 @@ def build_monthly_data(series, modkey):
             if vals:
                 rate = round(sum(vals)/len(vals), 2)
                 all_rows.append({"name": name, "rate": rate,
-                                 "color": get_color(name), "isNubank": name == "Nubank"})
+                                 "color": get_color(name), "isNubank": name == "Nubank",
+                                 "categoria": get_categoria(name)})
         all_rows.sort(key=lambda r: r["rate"])
         nu_idx = next((i for i, r in enumerate(all_rows) if r["isNubank"]), None)
         for i, r in enumerate(all_rows):
@@ -385,7 +489,7 @@ main{max-width:960px;margin:0 auto;padding:1.75rem 1.5rem}
 .bar-pos{font-size:11px;color:var(--text3);width:24px;text-align:right;font-family:'DM Mono',monospace;flex-shrink:0}
 .bar-badge{width:64px;flex-shrink:0}
 .bar-badge-pill{font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap}
-.b-nu{background:var(--nu-light);color:var(--nu-dark)}.b-ahead{background:#E8F5E9;color:#2E7D32}.b-trad{background:var(--surface2);color:var(--text3)}
+.b-nu{background:var(--nu-light);color:var(--nu-dark)}.b-ahead{background:#E8F5E9;color:#2E7D32}.b-trad{background:#F3F4F6;color:#6B7280}.b-fintech{background:#EFF6FF;color:#1D4ED8}.b-coop{background:#F0FDF4;color:#15803D}.b-fin{background:#FFF7ED;color:#C2410C}
 .bar-name{font-size:13px;font-weight:500;flex:1;min-width:0}
 .bar-name.nu{color:var(--nu-dark)}
 .bar-track{flex:1;height:7px;background:var(--surface2);border-radius:4px;overflow:hidden;max-width:200px;flex-shrink:0}
