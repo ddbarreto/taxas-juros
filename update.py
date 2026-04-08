@@ -32,13 +32,18 @@ MODALIDADE_LABELS = {
 BASE_INST = {
     "NU FINANCEIRA S.A. CFI":       "Nubank",
     "ITAU UNIBANCO S.A.":           "Ita\u00fa",
+    "IT\u00c1U UNIBANCO S.A.":           "Ita\u00fa",
     "ITAÚ UNIBANCO S.A.":           "Ita\u00fa",
+    "BANCO IT\u00c1U CONSIGNADO S.A.":  "Ita\u00fa",
+    "BANCO ITAÚ CONSIGNADO S.A.":   "Ita\u00fa",
     "CAIXA ECONOMICA FEDERAL":      "Caixa",
     "BCO DO BRASIL S.A.":           "Banco do Brasil",
     "BCO COOPERATIVO SICREDI S.A.": "Sicredi",
     "BCO ARBI S.A.":                "Banco Arbi",
     "BANCO INTER":                  "Banco Inter",
     "BANCOSEGURO S.A.":             "BancoSeguro",
+    "BCO BRADESCO S.A.":            "Bradesco",
+    "BCO SANTANDER (BRASIL) S.A.":  "Santander",
 }
 
 # Players relevantes por modalidade (além dos base)
@@ -69,6 +74,8 @@ CORES = {
     "Ita\u00fa":            "#185FA5",
     "Caixa":           "#0F6E56",
     "Banco do Brasil": "#BA7517",
+    "Bradesco":        "#CC0000",
+    "Santander":       "#EC0000",
     "Sicredi":         "#1D9E75",
     "Banco Arbi":      "#D85A30",
     "Banco Inter":     "#D4537E",
@@ -235,7 +242,7 @@ def build_monthly_data(series, modkey):
 
     inst_map = get_inst_map(modkey)
     known_names = set(inst_map.values())
-    always_show = {"Nubank", "Caixa", "Itáu", "Banco do Brasil"}
+    always_show = {"Nubank", "Caixa", "Itáu", "Banco do Brasil", "Bradesco", "Santander"}
 
     ranked_per_period = {}
     for pk in list(periods.keys()):
@@ -259,8 +266,7 @@ def build_monthly_data(series, modkey):
             r["pos"] = i + 1
             r["ahead"] = nu_idx is not None and i < nu_idx
 
-        shown = [r for r in all_rows
-                 if r["ahead"] or r["name"] in always_show or r["name"] in known_names]
+        shown = all_rows  # show all institutions
 
         ranked_per_period[pk] = {"rows": shown, "nuPos": nu_global_pos, "totalPlayers": total}
 
@@ -312,8 +318,8 @@ main{max-width:960px;margin:0 auto;padding:1.75rem 1.5rem}
 .ptabs{display:flex;gap:6px;margin-bottom:1.5rem;flex-wrap:wrap}
 .ptab{font-size:12px;font-family:'DM Sans',sans-serif;padding:5px 14px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
 .ptab:hover{background:var(--surface2)}.ptab.active{background:var(--text);color:#fff;border-color:var(--text)}
-.mgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.5rem}
-@media(max-width:600px){.mgrid{grid-template-columns:repeat(2,1fr)}}
+.mgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:1.5rem}
+@media(max-width:700px){.mgrid{grid-template-columns:repeat(3,1fr)}}@media(max-width:480px){.mgrid{grid-template-columns:repeat(2,1fr)}}
 .mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.1rem}
 .ml{font-size:10px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mv{font-size:24px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-0.02em}
