@@ -1,3 +1,25 @@
+function filterRanking(inputEl,listId){
+  var q=inputEl.value.toLowerCase();
+  var rows=document.querySelectorAll('#'+listId+' .bar-row');
+  rows.forEach(function(row){
+    var name=(row.getAttribute('data-name')||'').toLowerCase();
+    row.style.display=(!q||name.indexOf(q)>=0)?'':'none';
+  });
+}
+function searchBox(listId){
+  return '<div style="margin-bottom:10px"><input type="text" placeholder="Buscar banco..." oninput="filterRanking(this,\''+listId+'\')" style="width:100%;padding:6px 14px;border:0.5px solid var(--border2);border-radius:20px;font-size:12px;font-family:DM Sans,sans-serif;background:var(--surface2);color:var(--text);outline:none" /></div>';
+}
+function filterRanking(inputEl,listId){
+  var q=inputEl.value.toLowerCase();
+  var rows=document.querySelectorAll('#'+listId+' .bar-row');
+  rows.forEach(function(row){
+    var name=(row.getAttribute('data-name')||'').toLowerCase();
+    row.style.display=(!q||name.indexOf(q)>=0)?'':'none';
+  });
+}
+function searchBox(listId){
+  return '<div style="margin-bottom:10px"><input type="text" placeholder="Buscar banco..." oninput="filterRanking(this,\''+listId+'\')" style="width:100%;padding:6px 14px;border:0.5px solid var(--border2);border-radius:20px;font-size:12px;font-family:DM Sans,sans-serif;background:var(--surface2);color:var(--text);outline:none" /></div>';
+}
 function getBadge(cat){
   if(cat=='tradicional') return '<span class="bar-badge-pill b-trad">tradicional</span>';
   if(cat=='fintech') return '<span class="bar-badge-pill b-fintech">fintech</span>';
@@ -36,7 +58,8 @@ function renderPubRanking(period){
   if(ahead)ins+=' \u00c0 sua frente: '+ahead+'.';
   if(cx)ins+=' Caixa cobra '+(cx-nu).toFixed(2)+' p.p. a mais.';
   if(bb)ins+=' Banco do Brasil cobra '+(bb-nu).toFixed(2)+' p.p. a mais (~'+(toAnn(bb)-toAnn(nu)).toFixed(1)+' p.p. ao ano).';
-  return{rows:rows,rankSub:m.periods[period].label+' \u2014 menor taxa = mais competitivo',ins:ins};
+  var sh=searchBox('rank-pub');
+  return{rows:sh+rows,rankSub:m.periods[period].label+' \u2014 menor taxa = mais competitivo',ins:ins};
 }
 
 function buildPublico(period){
@@ -83,7 +106,7 @@ function buildMonthly(key,data,period){
   var barRows=rows.map(function(r){
     var pct=rng>0?(r.rate-mn)/rng:0,bw=Math.round(10+pct*88);
     var pill=r.isNubank?'<span class="bar-badge-pill b-nu">Nubank \u2605</span>':getBadge(r.categoria);
-    return'<div class="bar-row'+(r.isNubank?' nu-highlight':'')+'"><span class="bar-pos">#'+r.pos+'</span><span class="bar-badge">'+pill+'</span><span class="bar-name'+(r.isNubank?' nu':'')+'">'+r.name+'</span><div class="bar-track"><div class="bar-fill" style="width:'+bw+'%;background:'+r.color+(r.isNubank?'':'99')+'"></div></div><span class="bar-val">'+r.rate.toFixed(2)+'%</span><span class="bar-ano">'+toAnn(r.rate).toFixed(1)+'% a.a.</span></div>';
+    return'<div class="bar-row'+(r.isNubank?' nu-highlight':'')+'" data-name="'+r.name.toLowerCase()+'"><span class="bar-pos">#'+r.pos+'</span><span class="bar-badge">'+pill+'</span><span class="bar-name'+(r.isNubank?' nu':'')+'">'+r.name+'</span><div class="bar-track"><div class="bar-fill" style="width:'+bw+'%;background:'+r.color+(r.isNubank?'':'99')+'"></div></div><span class="bar-val">'+r.rate.toFixed(2)+'%</span><span class="bar-ano">'+toAnn(r.rate).toFixed(1)+'% a.a.</span></div>';
   }).join('');
   var ahead=rows.filter(function(r){return r.ahead;}).map(function(r){return r.name;}).join(', ');
   var bbRow=rows.find(function(r){return r.name=='Banco do Brasil';});
@@ -93,7 +116,7 @@ function buildMonthly(key,data,period){
   if(bbRow&&nuRate)ins+=' Banco do Brasil cobra '+(bbRow.rate-nuRate).toFixed(2)+' p.p. a mais (~'+(toAnn(bbRow.rate)-toAnn(nuRate)).toFixed(1)+' p.p. ao ano).';
   var noteText=key=='inss'?'Dados semanais do Bacen':'Dados semanais \u00b7 taxas no privado s\u00e3o maiores';
   document.getElementById('metrics-'+key).innerHTML=cards;
-  document.getElementById('bars-'+key).innerHTML=barRows;
+  document.getElementById('bars-'+key).innerHTML=searchBox('bars-'+key)+barRows;
   document.getElementById('rank-sub-'+key).textContent=totalPlayers+' institui\u00e7\u00f5es \u00b7 '+noteText;
   document.getElementById('ins-'+key).innerHTML=ins;
   document.querySelectorAll('#ptabs-'+key+' .ptab').forEach(function(t){t.classList.remove('active');});
