@@ -225,7 +225,24 @@ def build_publico_data(series):
             if valid:
                 nu_avgs.setdefault(pk, {})[name] = sum(valid)/len(valid)
 
+    # Build chart_banks: Nubank + top 5 ahead (or top 5 behind if none ahead)
+    sorted_by_avg = sorted(
+        [(n, overall_avgs[n]) for n in overall_avgs if n in series],
+        key=lambda x: x[1]
+    )
+    nu_pos = next((i for i, (n, _) in enumerate(sorted_by_avg) if n == "Nubank"), 0)
+    ahead_names = [n for n, _ in sorted_by_avg[:nu_pos]]  # lower rate = ahead
+    behind_names = [n for n, _ in sorted_by_avg[nu_pos+1:]]  # higher rate = behind
+
+    if ahead_names:
+        chart_names = set(ahead_names[-5:] + ["Nubank"])  # up to 5 closest ahead + Nubank
+    else:
+        chart_names = set(behind_names[:5] + ["Nubank"])  # up to 5 closest behind + Nubank
+
+    chart_banks = [b for b in banks if b["key"] in chart_names]
+
     return {"type": "daily", "dates": all_dates, "raw": raw, "banks": banks,
+            "chart_banks": chart_banks,
             "periods": periods, "defaultPeriod": default, "avgs": nu_avgs}
 
 def build_monthly_data(series, modkey):
