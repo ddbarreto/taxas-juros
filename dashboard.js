@@ -98,7 +98,7 @@ function buildMonthly(key,data,period){
   var barRows=rows.map(function(r){
     var pct=rng>0?(r.rate-mn)/rng:0,bw=Math.round(10+pct*88);
     var pill=r.isNubank?'<span class="bar-badge-pill b-nu">Nubank \u2605</span>':getBadge(r.categoria);
-    return'<div class="bar-row'+(r.isNubank?' nu-highlight':'')+'" '+(r.isNubank?' data-nu="1" ':'')+' data-name="'+r.name.toLowerCase()+'">'<span class="bar-pos">#'+r.pos+'</span><span class="bar-badge">'+pill+'</span><span class="bar-name'+(r.isNubank?' nu':'')+'">'+r.name+'</span><div class="bar-track"><div class="bar-fill" style="width:'+bw+'%;background:'+r.color+(r.isNubank?'':'99')+'"></div></div><span class="bar-val">'+r.rate.toFixed(2)+'%</span><span class="bar-ano">'+toAnn(r.rate).toFixed(1)+'% a.a.</span></div>';
+    return'<div class="bar-row'+(r.isNubank?' nu-highlight':'')+'" '+(r.isNubank?' data-nu="1" ':'')+' data-name="'+r.name.toLowerCase()+'">'+'<span class="bar-pos">#'+r.pos+'</span><span class="bar-badge">'+pill+'</span><span class="bar-name'+(r.isNubank?' nu':'')+'">'+r.name+'</span><div class="bar-track"><div class="bar-fill" style="width:'+bw+'%;background:'+r.color+(r.isNubank?'':'99')+'"></div></div><span class="bar-val">'+r.rate.toFixed(2)+'%</span><span class="bar-ano">'+toAnn(r.rate).toFixed(1)+'% a.a.</span></div>';
   }).join('');
   var ahead=rows.filter(function(r){return r.ahead;}).map(function(r){return r.name;}).join(', ');
   var bbRow=rows.find(function(r){return r.name=='Banco do Brasil';});
