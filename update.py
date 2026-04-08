@@ -126,12 +126,13 @@ CATEGORIAS = {
     "BCO BANESTES S.A.": "cooperativa",
     "BCO DO EST. DE SE S.A.": "cooperativa",
 
-    # Bancos tradicionais grandes
+    # Bancos tradicionais grandes (nomes mapeados E nomes raw da API)
     "Itaú":            "tradicional",
     "Caixa":           "tradicional",
     "Banco do Brasil": "tradicional",
     "Bradesco":        "tradicional",
     "Santander":       "tradicional",
+    "Itau":            "tradicional",
     "BCO BRADESCO S.A.": "tradicional",
     "BCO SANTANDER (BRASIL) S.A.": "tradicional",
     "ITAÚ UNIBANCO S.A.": "tradicional",
@@ -195,7 +196,24 @@ CATEGORIAS = {
 }
 
 def get_categoria(name):
-    return CATEGORIAS.get(name, "especializado")
+    # Try direct lookup first
+    if name in CATEGORIAS:
+        return CATEGORIAS[name]
+    # Try via BASE_INST mapping (raw API name → friendly name → categoria)
+    friendly = BASE_INST.get(name)
+    if friendly and friendly in CATEGORIAS:
+        return CATEGORIAS[friendly]
+    # Heuristics for unmapped names
+    name_upper = name.upper()
+    if any(x in name_upper for x in ['SICREDI','SICOOB','COOPERAT','BANRISUL','BANESTES']):
+        return "cooperativa"
+    if any(x in name_upper for x in ['BRADESCO','SANTANDER','ITAÚ','ITAU','CAIXA','BCO DO BRASIL']):
+        return "tradicional"
+    if any(x in name_upper for x in ['NUBANK','INTER','DIGIO','NEON','PICPAY','C6 CONSIG','XP']):
+        return "fintech"
+    if any(x in name_upper for x in ['CFI','SCFI','FINANC','FINAN','FINANCEIRA','CREDITO','CRÉDITO']):
+        return "financeira"
+    return "especializado"
 
 
 DATA_FILE = "data.json"
