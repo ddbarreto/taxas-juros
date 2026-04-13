@@ -594,10 +594,13 @@ setTimeout(function(){document.getElementById('pwd-input').focus();},100);
         + generated_at +
         """</div></div>
 </header>
-<div class="mtabs">
-  <button class="mtab active" onclick="showModal('publico',this)">Consignado P\u00fablico</button>
-  <button class="mtab" onclick="showModal('inss',this)">Consignado INSS</button>
-  <button class="mtab" onclick="showModal('privado',this)">Consignado Privado</button>
+<div class="mtabs" style="justify-content:space-between;align-items:center">
+  <div style="display:flex">
+  <button class="mtab active" onclick="showModal('publico',this)" data-pt="Consignado P\u00fablico" data-en="Public Payroll">Consignado P\u00fablico</button>
+  <button class="mtab" onclick="showModal('inss',this)" data-pt="Consignado INSS" data-en="INSS Payroll">Consignado INSS</button>
+  <button class="mtab" onclick="showModal('privado',this)" data-pt="Consignado Privado" data-en="Private Payroll">Consignado Privado</button>
+  </div>
+  <button id="lang-btn" onclick="toggleLang()" style="font-size:11px;font-weight:600;padding:4px 12px;border:1px solid var(--border2);border-radius:20px;background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;margin-right:4px">EN</button>
 </div>
 <main>
   <div id="p-publico" class="panel active"></div>
