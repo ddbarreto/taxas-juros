@@ -220,16 +220,39 @@ DATA_FILE = "data.json"
 
 # ── API ───────────────────────────────────────────────────────────────────────
 
-def fetch_bacen(data_inicio, data_fim):
+def fetch_bacen_modalidade(data_inicio, data_fim, modalidade_str):
+    """Busca dados de UMA modalidade específica, evitando o limite de 10000 registros."""
     base = "https://olinda.bcb.gov.br/olinda/servico/taxaJuros/versao/v2/odata/TaxasJurosDiariaPorInicioPeriodo"
-    url = f"{base}?$format=json&$top=10000&dataInicio={data_inicio}&dataFim={data_fim}"
-    print(f"  Buscando: {url}")
+    # Use $filter para restringir a uma modalidade — assim os 10000 registros cobrem mais datas
+    filter_val = urllib.parse.quote(f"Modalidade eq '{modalidade_str}' and Segmento eq 'PESSOA FÍSICA'")
+    url = (
+        f"{base}"
+        f"?$format=json"
+        f"&$top=5000"
+        f"&$filter={filter_val}"
+        f"&dataInicio={data_inicio}"
+        f"&dataFim={data_fim}"
+    )
+    print(f"  Buscando: {url[:120]}...")
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
     with urllib.request.urlopen(req, timeout=60) as resp:
         data = json.loads(resp.read().decode("utf-8"))
     records = data.get("value", [])
-    print(f"  Total recebido: {len(records)}")
+    print(f"  Recebido: {len(records)} registros")
     return records
+
+def fetch_bacen(data_inicio, data_fim):
+    """Busca dados fazendo UMA chamada por modalidade para evitar limite de 10000."""
+    all_records = []
+    for key, modalidade_str in MODALIDADES.items():
+        print(f"  [{key}] buscando...")
+        try:
+            records = fetch_bacen_modalidade(data_inicio, data_fim, modalidade_str)
+            all_records.extend(records)
+        except Exception as e:
+            print(f"  [{key}] ERRO: {e}")
+    print(f"  Total combinado: {len(all_records)} registros")
+    return all_records
 
 def get_inst_map(modkey):
     m = dict(BASE_INST)
@@ -523,6 +546,37 @@ main{max-width:960px;margin:0 auto;padding:1.75rem 1.5rem}
 </style>
 </head>
 <body>
+<div id="lock-screen" style="position:fixed;inset:0;background:#f5f4f0;display:flex;align-items:center;justify-content:center;z-index:9999">
+  <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:2.5rem 2rem;width:320px;text-align:center">
+    <div style="width:44px;height:44px;background:#EEEDFE;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="9" width="12" height="9" rx="2" stroke="#7C3AED" stroke-width="1.5"/><path d="M7 9V6a3 3 0 016 0v3" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+    <div style="font-size:15px;font-weight:600;color:#1a1a18;margin-bottom:4px">Acesso restrito</div>
+    <div style="font-size:12px;color:#9a9a94;margin-bottom:1.5rem">Insira a senha para continuar</div>
+    <input id="pwd-input" type="password" placeholder="Senha" onkeydown="if(event.key==='Enter')checkPwd()" style="width:100%;padding:9px 14px;border:1px solid rgba(0,0,0,0.14);border-radius:10px;font-size:13px;font-family:DM Sans,sans-serif;outline:none;box-sizing:border-box;text-align:center;letter-spacing:0.1em" />
+    <div id="pwd-error" style="font-size:11px;color:#C62828;margin-top:6px;min-height:16px"></div>
+    <button onclick="checkPwd()" style="margin-top:8px;width:100%;padding:9px;background:#7C3AED;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;font-family:DM Sans,sans-serif;cursor:pointer">Entrar</button>
+  </div>
+</div>
+<script>
+function checkPwd(){
+  var v=document.getElementById('pwd-input').value;
+  if(v==='juros'){
+    document.getElementById('lock-screen').style.display='none';
+    sessionStorage.setItem('auth','1');
+  } else {
+    document.getElementById('pwd-error').textContent='Senha incorreta. Tente novamente.';
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-input').focus();
+  }
+}
+if(sessionStorage.getItem('auth')==='1'){
+  document.addEventListener('DOMContentLoaded',function(){
+    document.getElementById('lock-screen').style.display='none';
+  });
+}
+setTimeout(function(){document.getElementById('pwd-input').focus();},100);
+</script>
 <header>
   <div class="logo">TX</div>
   <div><div class="ht">Comparativo de Taxas de Juros</div><div class="hs">Cr\u00e9dito Consignado \u00b7 Prefixado \u00b7 Pessoa F\u00edsica \u00b7 Bacen</div></div>
