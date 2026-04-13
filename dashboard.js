@@ -30,7 +30,7 @@ function renderPubMetrics(period){
     var a=avg(m.raw[name],idxs);if(a==null)return'';
     var diff=name!='Nubank'&&nuA?'+'+(a-nuA).toFixed(2)+' p.p. vs Nu':null;
     var cls=name=='Nubank'?'bnu':(a-nuA>0.2?'bdanger':'bwarn');
-    return'<div class="mc"><div class="ml">'+name+'</div><div class="mv">'+a.toFixed(2)+'%</div><div class="ms">ao m\u00eas</div>'+(diff?'<div class="mb '+cls+'">'+diff+'</div>':'')+'</div>';
+    return'<div class="mc"><div class="ml">'+name+'</div><div class="mv">'+a.toFixed(2)+'%</div><div class="ms">'+t('ao-mes')+'</div>'+(diff?'<div class="mb '+cls+'">'+diff+'</div>':'')+'</div>';
   }).join('');
 }
 
@@ -79,7 +79,7 @@ function initPublico(){
   var m=PUBLICO;
   var cb=m.chart_banks||m.banks;var legend=cb.map(function(b){return'<span class="li"><span class="ld" style="background:'+b.color+'"></span>'+b.key+'</span>';}).join('');
   var ptabs=Object.entries(m.periods).map(function(e){var pk=e[0],pv=e[1];return'<button class="ptab" data-period="'+pk+'" onclick="buildPublico(\''+pk+'\')">'+pv.label+'</button>';}).join('');
-  document.getElementById('p-publico').innerHTML='<div class="hero"><h2>Onde o Nubank se posiciona no consignado p\u00fablico?</h2><p>Dados di\u00e1rios do Bacen \u00b7 Prefixado \u00b7 Pessoa F\u00edsica</p></div><div class="ptabs" id="ptabs-pub">'+ptabs+'</div><div class="mgrid" id="metrics-pub"></div><div class="card"><div class="ct">Evolu\u00e7\u00e3o di\u00e1ria da taxa ao m\u00eas</div><div class="cs">Todos os players \u00b7 menor taxa = mais competitivo</div><div class="legend">'+legend+'</div><div class="cw"><canvas id="chart-pub"></canvas></div></div><div class="card"><div class="ct">Ranking por taxa m\u00e9dia</div><div class="cs" id="rank-sub-pub"></div><div id="rank-pub"></div></div><div class="insight" id="ins-pub"></div>';
+  document.getElementById('p-publico').innerHTML='<div class="hero"><h2>'+t('hero-pub')+'</h2><p>'+t('hero-pub-sub')+'</p></div><div class="ptabs" id="ptabs-pub">'+ptabs+'</div><div class="mgrid" id="metrics-pub"></div><div class="card"><div class="ct">'+t('chart-title-pub')+'</div><div class="cs">'+t('chart-sub-pub')+'</div><div class="legend">'+legend+'</div><div class="cw"><canvas id="chart-pub"></canvas></div></div><div class="card"><div class="ct">'+t('ranking-title-pub')+'</div><div class="cs" id="rank-sub-pub"></div><div id="rank-pub"></div></div><div class="insight" id="ins-pub"></div>';
   buildPublico(m.defaultPeriod);
 }
 
@@ -92,7 +92,7 @@ function buildMonthly(key,data,period){
     var r=rows.find(function(r){return r.name==name;});if(!r)return'';
     var diff=name!='Nubank'&&nuRate?'+'+(r.rate-nuRate).toFixed(2)+' p.p. vs Nu':null;
     var cls=name=='Nubank'?'bnu':((r.rate-nuRate)>0.5?'bdanger':'bwarn');
-    return'<div class="mc"><div class="ml">'+name+'</div><div class="mv">'+r.rate.toFixed(2)+'%</div><div class="ms">ao m\u00eas</div>'+(diff?'<div class="mb '+cls+'">'+diff+'</div>':'')+'</div>';
+    return'<div class="mc"><div class="ml">'+name+'</div><div class="mv">'+r.rate.toFixed(2)+'%</div><div class="ms">'+t('ao-mes')+'</div>'+(diff?'<div class="mb '+cls+'">'+diff+'</div>':'')+'</div>';
   }).join('');
   var mn=rows.length?rows[0].rate:0,mx=rows.length?rows[rows.length-1].rate:0,rng=mx-mn;
   var barRows=rows.map(function(r){
@@ -134,11 +134,11 @@ function initMonthly(key,data){
   var legend=cb.map(function(b){return'<span class="li"><span class="ld" style="background:'+b.color+'"></span>'+b.key+'</span>';}).join('');
   var ptabs=Object.entries(data.periods).map(function(e){var pk=e[0],pv=e[1];return'<button class="ptab" data-period="'+pk+'" onclick="buildMonthly(\''+key+'\','+key.toUpperCase()+',\''+pk+'\')">'+pv.label+'</button>';}).join('');
   document.getElementById('p-'+key).innerHTML=
-    '<div class="hero"><h2>Onde o Nubank se posiciona no '+label.toLowerCase()+'?</h2><p>Dados do Bacen \u00b7 Prefixado \u00b7 Pessoa F\u00edsica</p></div>'+
+    '<div class="hero"><h2>'+(key==='inss'?t('hero-inss'):t('hero-priv'))+'</h2><p>'+(key==='inss'?t('hero-inss-sub'):t('hero-priv-sub'))+'</p></div>'+
     '<div class="ptabs" id="ptabs-'+key+'">'+ptabs+'</div>'+
     '<div class="mgrid" id="metrics-'+key+'"></div>'+
-    '<div class="card"><div class="ct">Evolu\u00e7\u00e3o da taxa ao m\u00eas</div><div class="cs">Nubank + players mais pr\u00f3ximos \u00b7 menor taxa = mais competitivo</div><div class="legend">'+legend+'</div><div class="cw"><canvas id="chart-'+key+'"></canvas></div></div>'+
-    '<div class="card"><div class="ct">Ranking completo</div><div class="cs" id="rank-sub-'+key+'"></div><div id="bars-'+key+'"></div></div>'+
+    '<div class="card"><div class="ct">'+t('chart-title-mon')+'</div><div class="cs">'+t('chart-sub-mon')+'</div><div class="legend">'+legend+'</div><div class="cw"><canvas id="chart-'+key+'"></canvas></div></div>'+
+    '<div class="card"><div class="ct">'+t('ranking-title-mon')+'</div><div class="cs" id="rank-sub-'+key+'"></div><div id="bars-'+key+'"></div></div>'+
     '<div class="insight" id="ins-'+key+'"></div>';
   buildMonthly(key,data,data.defaultPeriod);
 }
@@ -153,3 +153,142 @@ function showModal(key,el){
 }
 initPublico();
 initialized['publico']=true;
+
+var currentLang = 'pt';
+
+var TRANSLATIONS = {
+  pt: {
+    // Header
+    'header-title': 'Comparativo de Taxas de Juros',
+    'header-sub': 'Crédito Consignado · Prefixado · Pessoa Física · Bacen',
+    // Hero
+    'hero-pub': 'Onde o Nubank se posiciona no consignado público?',
+    'hero-pub-sub': 'Dados diários do Bacen · Prefixado · Pessoa Física',
+    'hero-inss': 'Onde o Nubank se posiciona no consignado inss?',
+    'hero-inss-sub': 'Dados do Bacen · Prefixado · Pessoa Física',
+    'hero-priv': 'Onde o Nubank se posiciona no consignado privado?',
+    'hero-priv-sub': 'Dados do Bacen · Prefixado · Pessoa Física',
+    // Chart titles
+    'chart-title-pub': 'Evolução diária da taxa ao mês',
+    'chart-sub-pub': 'Todos os players · menor taxa = mais competitivo',
+    'chart-title-mon': 'Evolução da taxa ao mês',
+    'chart-sub-mon': 'Nubank + players mais próximos · menor taxa = mais competitivo',
+    // Ranking
+    'ranking-title-pub': 'Ranking por taxa média',
+    'ranking-title-mon': 'Ranking completo',
+    // Period labels
+    'media-periodo': 'Média do período',
+    // Metric card sub
+    'ao-mes': 'ao mês · média',
+    'ao-mes-short': 'ao mês',
+    // Badges
+    'tradicional': 'tradicional',
+    'fintech': 'fintech',
+    'cooperativa': 'cooperativa',
+    'financeira': 'financeira',
+    'especializado': 'especializado',
+    // Footer
+    'footer': 'Fonte: Banco Central do Brasil — Histórico de Taxa de Juros · Gerado em ',
+    // Insight prefix
+    'insight-menor': 'menor taxa = mais competitivo',
+    // Search
+    'search-placeholder': 'Buscar banco...',
+    // Lock screen
+    'lock-title': 'Acesso restrito',
+    'lock-sub': 'Insira a senha para continuar',
+    'lock-btn': 'Entrar',
+    'lock-error': 'Senha incorreta. Tente novamente.',
+    'lock-placeholder': 'Senha',
+  },
+  en: {
+    'header-title': 'Interest Rate Comparison',
+    'header-sub': 'Payroll Credit · Fixed Rate · Individuals · Bacen',
+    'hero-pub': 'Where does Nubank stand in public payroll credit?',
+    'hero-pub-sub': 'Daily Bacen data · Fixed rate · Individuals',
+    'hero-inss': 'Where does Nubank stand in INSS payroll credit?',
+    'hero-inss-sub': 'Bacen data · Fixed rate · Individuals',
+    'hero-priv': 'Where does Nubank stand in private payroll credit?',
+    'hero-priv-sub': 'Bacen data · Fixed rate · Individuals',
+    'chart-title-pub': 'Daily rate evolution (monthly)',
+    'chart-sub-pub': 'All players · lower rate = more competitive',
+    'chart-title-mon': 'Rate evolution (monthly)',
+    'chart-sub-mon': 'Nubank + closest players · lower rate = more competitive',
+    'ranking-title-pub': 'Average rate ranking',
+    'ranking-title-mon': 'Full ranking',
+    'media-periodo': 'Period average',
+    'ao-mes': 'per month · avg',
+    'ao-mes-short': 'per month',
+    'tradicional': 'traditional',
+    'fintech': 'fintech',
+    'cooperativa': 'cooperative',
+    'financeira': 'financial',
+    'especializado': 'specialized',
+    'footer': 'Source: Brazilian Central Bank — Interest Rate History · Generated on ',
+    'insight-menor': 'lower rate = more competitive',
+    'search-placeholder': 'Search bank...',
+    'lock-title': 'Restricted access',
+    'lock-sub': 'Enter password to continue',
+    'lock-btn': 'Enter',
+    'lock-error': 'Incorrect password. Please try again.',
+    'lock-placeholder': 'Password',
+  }
+};
+
+function t(key) {
+  return (TRANSLATIONS[currentLang] || TRANSLATIONS['pt'])[key] || key;
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'pt' ? 'en' : 'pt';
+  var btn = document.getElementById('lang-btn');
+  if (btn) btn.textContent = currentLang === 'pt' ? 'EN' : 'PT';
+
+  // Update static header elements
+  applyLangToStatic();
+
+  // Re-render active panel
+  var activePanel = document.querySelector('.panel.active');
+  if (activePanel) {
+    var key = activePanel.id.replace('p-', '');
+    if (key === 'publico') {
+      initPublico();
+    } else {
+      var data = key === 'inss' ? INSS : PRIVADO;
+      initMonthly(key, data);
+    }
+  }
+
+  // Update modal tab labels
+  document.querySelectorAll('.mtab[data-pt]').forEach(function(btn) {
+    btn.textContent = currentLang === 'pt' ? btn.getAttribute('data-pt') : btn.getAttribute('data-en');
+  });
+
+  // Update period tabs
+  updatePeriodTabLabels();
+}
+
+function applyLangToStatic() {
+  var ht = document.querySelector('.ht');
+  if (ht) ht.textContent = t('header-title');
+  var hs = document.querySelector('.hs');
+  if (hs) hs.textContent = t('header-sub');
+  var footer = document.querySelector('.source');
+  if (footer) {
+    var link = footer.querySelector('a');
+    var linkHtml = link ? link.outerHTML : '';
+    footer.innerHTML = t('footer') + '<br>' + linkHtml;
+  }
+  // Update search placeholders
+  document.querySelectorAll('input[placeholder]').forEach(function(inp) {
+    if (inp.type === 'text') inp.placeholder = t('search-placeholder');
+  });
+}
+
+function updatePeriodTabLabels() {
+  // Period tabs show month names - only "Média do período" needs translating
+  document.querySelectorAll('.ptab').forEach(function(btn) {
+    if (btn.textContent.indexOf('dia') > -1 || btn.textContent.indexOf('eriod') > -1) {
+      btn.textContent = t('media-periodo');
+    }
+  });
+}
