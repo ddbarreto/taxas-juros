@@ -378,21 +378,11 @@ def build_publico_data(series):
             if valid:
                 nu_avgs.setdefault(pk, {})[name] = sum(valid)/len(valid)
 
-    # Build chart_banks: Nubank + top 5 ahead (or top 5 behind if none ahead)
-    sorted_by_avg = sorted(
-        [(n, overall_avgs[n]) for n in overall_avgs if n in series],
-        key=lambda x: x[1]
-    )
-    nu_pos = next((i for i, (n, _) in enumerate(sorted_by_avg) if n == "Nubank"), 0)
-    ahead_names = [n for n, _ in sorted_by_avg[:nu_pos]]  # lower rate = ahead
-    behind_names = [n for n, _ in sorted_by_avg[nu_pos+1:]]  # higher rate = behind
 
-    if ahead_names:
-        chart_names = set(ahead_names[-5:] + ["Nubank"])  # up to 5 closest ahead + Nubank
-    else:
-        chart_names = set(behind_names[:5] + ["Nubank"])  # up to 5 closest behind + Nubank
+    # chart_banks: always Nubank + the 5 big traditional banks
+    CHART_FIXED = {"Nubank", "Banco do Brasil", "Santander", "Caixa", "Bradesco", "Itaú"}
+    chart_banks = [b for b in banks if b["key"] in CHART_FIXED]
 
-    chart_banks = [b for b in banks if b["key"] in chart_names]
 
     return {"type": "daily", "dates": all_dates, "raw": raw, "banks": banks,
             "chart_banks": chart_banks,
@@ -437,16 +427,9 @@ def build_monthly_data(series, modkey):
                       "ahead": avg_rate < nu_overall and name != "Nubank",
                       "categoria": get_categoria(name)})
 
-    # chart_banks: Nubank + up to 5 closest ahead, or 5 behind if none ahead
-    sorted_by_avg = sorted(overall_avgs.items(), key=lambda x: x[1])
-    nu_pos = next((i for i, (n, _) in enumerate(sorted_by_avg) if n == "Nubank"), 0)
-    ahead_names = [n for n, _ in sorted_by_avg[:nu_pos]]
-    behind_names = [n for n, _ in sorted_by_avg[nu_pos+1:]]
-    if ahead_names:
-        chart_names = set(ahead_names[-5:] + ["Nubank"])
-    else:
-        chart_names = set(behind_names[:5] + ["Nubank"])
-    chart_banks = [b for b in banks if b["key"] in chart_names]
+    # chart_banks: always Nubank + the 5 big traditional banks
+    CHART_FIXED = {"Nubank", "Banco do Brasil", "Santander", "Caixa", "Bradesco", "Ita\u00fa"}
+    chart_banks = [b for b in banks if b["key"] in CHART_FIXED]
 
     # Ranked per period (monthly averages for bar chart)
     ranked_per_period = {}
@@ -568,25 +551,6 @@ main{max-width:960px;margin:0 auto;padding:1.75rem 1.5rem}
     <button onclick="checkPwd()" style="margin-top:8px;width:100%;padding:9px;background:#7C3AED;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;font-family:DM Sans,sans-serif;cursor:pointer">Entrar</button>
   </div>
 </div>
-<script>
-function checkPwd(){
-  var v=document.getElementById('pwd-input').value;
-  if(v==='juros'){
-    document.getElementById('lock-screen').style.display='none';
-    sessionStorage.setItem('auth','1');
-  } else {
-    document.getElementById('pwd-error').textContent='Senha incorreta. Tente novamente.';
-    document.getElementById('pwd-input').value='';
-    document.getElementById('pwd-input').focus();
-  }
-}
-if(sessionStorage.getItem('auth')==='1'){
-  document.addEventListener('DOMContentLoaded',function(){
-    document.getElementById('lock-screen').style.display='none';
-  });
-}
-setTimeout(function(){document.getElementById('pwd-input').focus();},100);
-</script>
 <header>
   <div class="logo">TX</div>
   <div><div class="ht">Comparativo de Taxas de Juros</div><div class="hs">Cr\u00e9dito Consignado \u00b7 Prefixado \u00b7 Pessoa F\u00edsica \u00b7 Bacen</div></div>
