@@ -281,8 +281,22 @@ def fetch_bcb_dates(modkey):
     })
     with urllib.request.urlopen(req, timeout=30) as resp:
         result = json.loads(resp.read().decode("utf-8"))
-    dates = [item.get("InicioPeriodo","")[:10] for item in result.get("conteudo", [])]
-    return sorted(set(d for d in dates if d))
+    seen = {}
+    for item in result.get("conteudo", []):
+        inicio = item.get("InicioPeriodo","")[:10]
+        periodo = item.get("Periodo","")
+        if " a " in str(periodo):
+            fim_str = periodo.split(" a ")[-1].strip()
+            try:
+                from datetime import datetime as _dt
+                fim_parsed = _dt.strptime(fim_str, "%d/%m/%Y").strftime("%Y-%m-%d")
+            except:
+                fim_parsed = inicio
+        else:
+            fim_parsed = inicio
+        if inicio and inicio not in seen:
+            seen[inicio] = fim_parsed
+    return sorted(seen.items())
 
 def fetch_bcb_date(modkey, data):
     """Busca dados de uma modalidade para uma data especifica."""
