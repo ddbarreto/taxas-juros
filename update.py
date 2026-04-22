@@ -229,52 +229,103 @@ DATA_FILE = "data.json"
 
 # ── API ───────────────────────────────────────────────────────────────────────
 
-def fetch_bacen_window(data_inicio, data_fim):
-    """Busca todos os registros de uma janela usando paginacao com $skip."""
-    base = "https://olinda.bcb.gov.br/olinda/servico/taxaJuros/versao/v2/odata/TaxasJurosDiariaPorInicioPeriodo"
-    all_records = []
-    skip = 0
-    while True:
-        url = (f"{base}?$format=json&$top=10000&$skip={skip}"
-               f"&dataInicio={data_inicio}&dataFim={data_fim}")
-        print(f"  GET {data_inicio} \u2192 {data_fim} (skip={skip})")
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-        batch = data.get("value", [])
-        all_records.extend(batch)
-        print(f"    batch: {len(batch)}, total: {len(all_records)}")
-        if len(batch) < 10000:
-            break  # Fewer than max means we got everything
-        skip += 10000
-        if skip > 200000:  # Safety limit
-            print(f"  AVISO: muitos registros, parando em {len(all_records)}")
-            break
-    return all_records
+# Codigos de modalidade no endpoint real do BCB (confirmados via DevTools)
+BCB_MODALIDADE_CODES = {
+    "inss":    "218101",  # Crédito pessoal consignado INSS - Prefixado
+    "privado": "219101",  # Crédito pessoal consignado privado - Prefixado
+    "publico": "220101",  # Crédito pessoal consignado público - Prefixado
+}
 
+def fetch_bcb_new(modkey, data):
+    """Busca usando o endpoint real do site BCB (descoberto via browser DevTools)."""
+    code = BCB_MODALIDADE_CODES[modkey]
+    base = "https://www.bcb.gov.br/api/servico/sitebcb/historicotaxajurosdiario"
+    # Build filter: segmento=1 (PF) + modalidade + data
+    filtro = f"(codigoSegmento eq '1') and (codigoModalidade eq '{code}') and (InicioPeriodo eq '{data}')"
+    import urllib.parse
+    url = base + "?filtro=" + urllib.parse.quote(filtro)
+    req = urllib.request.Request(url, headers={
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "Referer": "https://www.bcb.gov.br/estatisticas/reporttxjuroshistorico",
+    })
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+    return result
+
+def fetch_bacen_window(data_inicio, data_fim):
+    """Fallback: old OData endpoint (kept for compatibility)."""
+    base = "https://olinda.bcb.gov.br/olinda/servico/taxaJuros/versao/v2/odata/TaxasJurosDiariaPorInicioPeriodo"
+    url = f"{base}?$format=json&$top=10000&dataInicio={data_inicio}&dataFim={data_fim}"
+    print(f"  GET {data_inicio} \u2192 {data_fim}")
+    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+    records = data.get("value", [])
+    print(f"  Recebido: {len(records)} registros")
+    return records
+
+
+def fetch_bcb_dates(modkey):
+    """Busca datas disponiveis para uma modalidade."""
+    code = BCB_MODALIDADE_CODES[modkey]
+    url = (f"https://www.bcb.gov.br/api/servico/sitebcb/historicotaxajurosdiario/"
+           f"ConsultaDatas?filtro=(codigoSegmento eq '1') and (codigoModalidade eq '{code}')")
+    import urllib.parse
+    url = (f"https://www.bcb.gov.br/api/servico/sitebcb/historicotaxajurosdiario/ConsultaDatas"
+           f"?filtro=" + urllib.parse.quote(f"(codigoSegmento eq '1') and (codigoModalidade eq '{code}')"))
+    req = urllib.request.Request(url, headers={
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://www.bcb.gov.br/estatisticas/reporttxjuroshistorico",
+    })
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+    dates = [item.get("InicioPeriodo","")[:10] for item in result.get("conteudo", [])]
+    return sorted(set(d for d in dates if d))
+
+def fetch_bcb_date(modkey, data):
+    """Busca dados de uma modalidade para uma data especifica."""
+    code = BCB_MODALIDADE_CODES[modkey]
+    import urllib.parse
+    filtro = f"(codigoSegmento eq '1') and (codigoModalidade eq '{code}') and (InicioPeriodo eq '{data}')"
+    url = ("https://www.bcb.gov.br/api/servico/sitebcb/historicotaxajurosdiario"
+           "?filtro=" + urllib.parse.quote(filtro))
+    req = urllib.request.Request(url, headers={
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://www.bcb.gov.br/estatisticas/reporttxjuroshistorico",
+    })
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+    return result.get("conteudo", [])
 
 def fetch_bacen(data_inicio, data_fim):
-    """Busca em janelas mensais com paginacao para garantir todos os dados."""
-    from datetime import datetime, timedelta
+    """Busca dados usando novo endpoint BCB por modalidade e data."""
     all_records = []
-    start = datetime.strptime(data_inicio, "%Y-%m-%d")
-    end   = datetime.strptime(data_fim,   "%Y-%m-%d")
-    cursor = start
-    while cursor <= end:
-        if cursor.month == 12:
-            next_m = datetime(cursor.year + 1, 1, 1)
-        else:
-            next_m = datetime(cursor.year, cursor.month + 1, 1)
-        window_end = min(next_m - timedelta(days=1), end)
-        w0 = cursor.strftime("%Y-%m-%d")
-        w1 = window_end.strftime("%Y-%m-%d")
+    for modkey in ["publico", "inss", "privado"]:
+        print(f"  [{modkey}] buscando datas disponiveis...")
         try:
-            records = fetch_bacen_window(w0, w1)
-            all_records.extend(records)
+            available_dates = fetch_bcb_dates(modkey)
+            # Filter to our date range
+            dates_in_range = [d for d in available_dates if data_inicio <= d <= data_fim]
+            print(f"  [{modkey}] {len(dates_in_range)} datas em {data_inicio} → {data_fim}")
+            for data in dates_in_range:
+                try:
+                    rows = fetch_bcb_date(modkey, data)
+                    for r in rows:
+                        all_records.append({
+                            "InstituicaoFinanceira": r.get("InstituicaoFinanceira", ""),
+                            "Modalidade": MODALIDADES[modkey],
+                            "Segmento": "PESSOA F\u00cdSICA",
+                            "InicioPeriodo": data,
+                            "TaxaJurosAoMes": r.get("TaxaJurosAoMes"),
+                        })
+                except Exception as e:
+                    print(f"  [{modkey}] erro em {data}: {e}")
         except Exception as e:
-            print(f"  ERRO {w0}: {e}")
-        cursor = next_m
-    print(f"  Total combinado: {len(all_records)} registros")
+            print(f"  [{modkey}] erro ao buscar datas: {e}")
+    print(f"  Total registros: {len(all_records)}")
     return all_records
 
 
