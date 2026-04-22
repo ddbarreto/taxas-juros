@@ -230,54 +230,52 @@ DATA_FILE = "data.json"
 # ── API ───────────────────────────────────────────────────────────────────────
 
 def fetch_bacen_window(data_inicio, data_fim):
-    """Busca dados para uma janela de datas."""
-    base = "https://olinda.bcb.gov.br/olinda/servico/taxaJuros/versao/v2/odata/TaxasJurosDiariaPorInicioPeriodo"
-    params = f"?$format=json&$top=10000&dataInicio={data_inicio}&dataFim={data_fim}"
-    url = base + params
+    """Busca dados usando sintaxe correta de funcao OData com paginacao via $skip."""
+    # Correct OData function call syntax: parameters in the path
+    base = "https://olinda.bcb.gov.br/olinda/servico/taxaJuros/versao/v2/odata"
+    func = f"TaxasJurosDiariaPorInicioPeriodo(dataInicio=@di,dataFim=@df)"
+    params = f"?@di='{data_inicio}'&@df='{data_fim}'&$format=json&$top=10000"
+    url = base + "/" + func + params
     print(f"  GET {data_inicio} \u2192 {data_fim}")
-    req = urllib.request.Request(url, headers={"Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
-    records = data.get("value", [])
-    print(f"  Recebido: {len(records)} registros")
-    return records
+    all_records = []
+    skip = 0
+    while True:
+        paged_url = url + (f"&$skip={skip}" if skip > 0 else "")
+        req = urllib.request.Request(paged_url, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        batch = data.get("value", [])
+        all_records.extend(batch)
+        if len(batch) < 10000:
+            break  # Got all records
+        skip += 10000
+        if skip > 100000:
+            print(f"  AVISO: limite de paginacao atingido")
+            break
+    print(f"  Recebido: {len(all_records)} registros")
+    return all_records
 
 def fetch_bacen(data_inicio, data_fim):
-    """Busca mensal para historico + diaria para mes atual (evita limite 10000)."""
+    """Busca em janelas mensais com paginacao para garantir todos os dados."""
     from datetime import datetime, timedelta
     all_records = []
     start = datetime.strptime(data_inicio, "%Y-%m-%d")
     end   = datetime.strptime(data_fim,   "%Y-%m-%d")
-    today = datetime.today()
-    cur_year  = today.year
-    cur_month = today.month
-
     cursor = start
     while cursor <= end:
-        is_current_month = (cursor.year == cur_year and cursor.month == cur_month)
-
-        if is_current_month:
-            # Fetch one day at a time — ~200 records/day, well under 10000
-            w0 = cursor.strftime("%Y-%m-%d")
-            w1 = w0
-            cursor = cursor + timedelta(days=1)
+        if cursor.month == 12:
+            next_m = datetime(cursor.year + 1, 1, 1)
         else:
-            # Fetch whole month at once
-            if cursor.month == 12:
-                next_m = datetime(cursor.year + 1, 1, 1)
-            else:
-                next_m = datetime(cursor.year, cursor.month + 1, 1)
-            window_end = min(next_m - timedelta(days=1), end)
-            w0 = cursor.strftime("%Y-%m-%d")
-            w1 = window_end.strftime("%Y-%m-%d")
-            cursor = next_m
-
+            next_m = datetime(cursor.year, cursor.month + 1, 1)
+        window_end = min(next_m - timedelta(days=1), end)
+        w0 = cursor.strftime("%Y-%m-%d")
+        w1 = window_end.strftime("%Y-%m-%d")
         try:
             records = fetch_bacen_window(w0, w1)
             all_records.extend(records)
         except Exception as e:
             print(f"  ERRO {w0}: {e}")
-
+        cursor = next_m
     print(f"  Total combinado: {len(all_records)} registros")
     return all_records
 
