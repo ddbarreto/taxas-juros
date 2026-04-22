@@ -307,22 +307,27 @@ def fetch_bacen(data_inicio, data_fim):
         print(f"  [{modkey}] buscando datas disponiveis...")
         try:
             available_dates = fetch_bcb_dates(modkey)
-            # Filter to our date range
-            dates_in_range = [d for d in available_dates if data_inicio <= d <= data_fim]
+            # Filter: include if inicio OR fim falls within our range
+            dates_in_range = [
+                (inicio, fim) for (inicio, fim) in available_dates
+                if (data_inicio <= inicio <= data_fim) or (data_inicio <= fim <= data_fim)
+            ]
             print(f"  [{modkey}] {len(dates_in_range)} datas em {data_inicio} → {data_fim}")
-            for data in dates_in_range:
+            for (inicio, fim) in dates_in_range:
                 try:
-                    rows = fetch_bcb_date(modkey, data)
+                    rows = fetch_bcb_date(modkey, inicio)
+                    # Use fim date for month classification so "31/03 a 07/04" shows as April
+                    display_date = fim if fim > inicio else inicio
                     for r in rows:
                         all_records.append({
                             "InstituicaoFinanceira": r.get("InstituicaoFinanceira", ""),
                             "Modalidade": MODALIDADES[modkey],
                             "Segmento": "PESSOA F\u00cdSICA",
-                            "InicioPeriodo": data,
+                            "InicioPeriodo": display_date,
                             "TaxaJurosAoMes": r.get("TaxaJurosAoMes"),
                         })
                 except Exception as e:
-                    print(f"  [{modkey}] erro em {data}: {e}")
+                    print(f"  [{modkey}] erro em {inicio}: {e}")
         except Exception as e:
             print(f"  [{modkey}] erro ao buscar datas: {e}")
     print(f"  Total registros: {len(all_records)}")
