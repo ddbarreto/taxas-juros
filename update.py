@@ -230,30 +230,28 @@ DATA_FILE = "data.json"
 # ── API ───────────────────────────────────────────────────────────────────────
 
 def fetch_bacen_window(data_inicio, data_fim):
-    """Busca dados usando sintaxe correta de funcao OData com paginacao via $skip."""
-    # Correct OData function call syntax: parameters in the path
-    base = "https://olinda.bcb.gov.br/olinda/servico/taxaJuros/versao/v2/odata"
-    func = f"TaxasJurosDiariaPorInicioPeriodo(dataInicio=@di,dataFim=@df)"
-    params = f"?@di='{data_inicio}'&@df='{data_fim}'&$format=json&$top=10000"
-    url = base + "/" + func + params
-    print(f"  GET {data_inicio} \u2192 {data_fim}")
+    """Busca todos os registros de uma janela usando paginacao com $skip."""
+    base = "https://olinda.bcb.gov.br/olinda/servico/taxaJuros/versao/v2/odata/TaxasJurosDiariaPorInicioPeriodo"
     all_records = []
     skip = 0
     while True:
-        paged_url = url + (f"&$skip={skip}" if skip > 0 else "")
-        req = urllib.request.Request(paged_url, headers={"Accept": "application/json"})
+        url = (f"{base}?$format=json&$top=10000&$skip={skip}"
+               f"&dataInicio={data_inicio}&dataFim={data_fim}")
+        print(f"  GET {data_inicio} \u2192 {data_fim} (skip={skip})")
+        req = urllib.request.Request(url, headers={"Accept": "application/json"})
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         batch = data.get("value", [])
         all_records.extend(batch)
+        print(f"    batch: {len(batch)}, total: {len(all_records)}")
         if len(batch) < 10000:
-            break  # Got all records
+            break  # Fewer than max means we got everything
         skip += 10000
-        if skip > 100000:
-            print(f"  AVISO: limite de paginacao atingido")
+        if skip > 200000:  # Safety limit
+            print(f"  AVISO: muitos registros, parando em {len(all_records)}")
             break
-    print(f"  Recebido: {len(all_records)} registros")
     return all_records
+
 
 def fetch_bacen(data_inicio, data_fim):
     """Busca em janelas mensais com paginacao para garantir todos os dados."""
