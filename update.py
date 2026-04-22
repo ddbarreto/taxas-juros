@@ -216,18 +216,25 @@ def get_categoria(name):
     return "especializado"
 
 
+def get_inst_map(modkey):
+    """Retorna mapa de nome raw → nome amigável para a modalidade."""
+    base = dict(BASE_INST)
+    if modkey == "inss":
+        base.update(INSS_EXTRA)
+    elif modkey == "privado":
+        base.update(PRIVADO_EXTRA)
+    return base
+
 DATA_FILE = "data.json"
 
 # ── API ───────────────────────────────────────────────────────────────────────
 
-def fetch_bacen_window(data_inicio, data_fim, segmento_filter=None):
-    """Busca dados para uma janela de datas, ordenado por data desc para pegar os mais recentes primeiro."""
+def fetch_bacen_window(data_inicio, data_fim):
+    """Busca dados para uma janela de datas."""
     base = "https://olinda.bcb.gov.br/olinda/servico/taxaJuros/versao/v2/odata/TaxasJurosDiariaPorInicioPeriodo"
-    params = f"?$format=json&$top=10000&$orderby=InicioPeriodo%20desc&dataInicio={data_inicio}&dataFim={data_fim}"
-    if segmento_filter:
-        params += f"&$filter=Segmento%20eq%20%27{urllib.parse.quote(segmento_filter)}%27"
+    params = f"?$format=json&$top=10000&dataInicio={data_inicio}&dataFim={data_fim}"
     url = base + params
-    print(f"  GET {data_inicio} \u2192 {data_fim}{' ['+segmento_filter+']' if segmento_filter else ''}")
+    print(f"  GET {data_inicio} \u2192 {data_fim}")
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
     with urllib.request.urlopen(req, timeout=60) as resp:
         data = json.loads(resp.read().decode("utf-8"))
@@ -236,21 +243,30 @@ def fetch_bacen_window(data_inicio, data_fim, segmento_filter=None):
     return records
 
 def fetch_bacen(data_inicio, data_fim):
-    """Busca em janelas de 7 dias para garantir que dados recentes nao sejam cortados pelo limite de 10000."""
+    """Busca por dia individual — unica forma de garantir dados de abril sem estourar limite."""
     from datetime import datetime, timedelta
     all_records = []
     start = datetime.strptime(data_inicio, "%Y-%m-%d")
     end   = datetime.strptime(data_fim,   "%Y-%m-%d")
+    # Only fetch days that are likely to have data (Mon-Fri)
+    # Use monthly windows for older data, daily for current month
+    current_month = datetime.today().replace(day=1)
     cursor = start
     while cursor <= end:
-        window_end = min(cursor + timedelta(days=6), end)
+        if cursor >= current_month:
+            # Current month: fetch day by day
+            window_end = cursor
+        else:
+            # Older months: fetch month by month
+            if cursor.month == 12:
+                window_end = min(datetime(cursor.year + 1, 1, 1) - timedelta(days=1), end)
+            else:
+                window_end = min(datetime(cursor.year, cursor.month + 1, 1) - timedelta(days=1), end)
         w0 = cursor.strftime("%Y-%m-%d")
         w1 = window_end.strftime("%Y-%m-%d")
         try:
-            records = fetch_bacen_window(w0, w1, segmento_filter="PESSOA F\u00cdSICA")
+            records = fetch_bacen_window(w0, w1)
             all_records.extend(records)
-            if len(records) >= 10000:
-                print(f"  AVISO: limite atingido em {w0}\u2192{w1}")
         except Exception as e:
             print(f"  ERRO {w0}: {e}")
         cursor = window_end + timedelta(days=1)
