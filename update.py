@@ -428,7 +428,13 @@ def build_publico_data(series):
         periods[f"m{i}"] = {"label": label, "idx": idxs}
     all_idxs = list(range(len(all_dates)))
     periods["all"] = {"label": "M\u00e9dia do per\u00edodo", "idx": all_idxs}
+    # Default to last month with enough data (>5 points)
     default = f"m{len(month_seq)-1}"
+    for i in range(len(month_seq)-1, -1, -1):
+        pk = f"m{i}"
+        if len(periods[pk]["idx"]) > 5:
+            default = pk
+            break
 
     # Calculate overall average per institution to determine who's ahead of Nubank
     overall_avgs = {}
@@ -482,7 +488,12 @@ def build_monthly_data(series, modkey):
         periods[mk] = {"label": f"{month_map_short[mo]} {yr}", "idx": idxs}
     all_idxs = list(range(len(all_dates)))
     periods["all"] = {"label": "Média do período", "idx": all_idxs}
+    # Default to last month with enough data (>5 points)
     default = month_keys[-1] if month_keys else "all"
+    for mk in reversed(month_keys):
+        if len(periods[mk]["idx"]) > 5:
+            default = mk
+            break
 
     # Overall average per institution (for chart_banks selection)
     overall_avgs = {}
